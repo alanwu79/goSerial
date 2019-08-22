@@ -69,7 +69,8 @@ func main() {
 			Parity:   "N",
 			//Timeout時間決定port.read()的等待時間上限
 			Timeout: 10 * time.Second,
-		})
+		}
+	)
 	if err != nil {
 		log.Fatal("Comport open fail")
 	}
