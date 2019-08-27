@@ -2,10 +2,12 @@ package main
 
 import (
 	"C"
+	"bytes"
+	"encoding/binary"
+	"fmt"
+	"github.com/goburrow/serial"
 	"log"
 	"time"
-
-	"github.com/goburrow/serial"
 )
 
 var MbTable = []uint16{
@@ -58,6 +60,44 @@ func CRC16Sum(data []byte) uint16 {
 	return crc
 }
 
+func returnDataLen(s string) byte {
+	var bySlice1 = bytes.Count([]byte(s), nil) - 1
+	var datalen byte = byte(bySlice1 + 11)
+	return datalen
+}
+func returnCRCLen(s string) byte {
+	var bySlice1 = bytes.Count([]byte(s), nil) - 1
+	var CRCLen byte = byte(bySlice1 + 13)
+	return CRCLen
+}
+
+//func sendMsg(port,pTxBuf []byte)  {
+//
+//	_, err = port.Write(pTxBuf) //寫資料出去
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//
+//	data := make([]byte, 4960)
+//	pos := 0
+//	var content []byte
+//
+//	time.Sleep(1000 * time.Millisecond) //等待回傳所需的時間1000ms
+//	for i := 0; i < 25; i++ {
+//		log.Printf("i=%d\n", i)
+//		bytesRead, err := port.Read(data) //讀資料回來
+//		//content = append(content, buffer[:bytesRead]...)
+//		if err != nil {
+//			log.Println("gg")
+//		}
+//		if bytesRead > 0 {
+//			pos += bytesRead
+//			content = append(content, data[:bytesRead]...)
+//		}
+//	}
+//	log.Println("content=", string(content))
+//}
+
 func main() {
 	//開啟SerialPort
 	port, err := serial.Open(
@@ -69,27 +109,60 @@ func main() {
 			Parity:   "N",
 			//Timeout時間決定port.read()的等待時間上限
 			Timeout: 10 * time.Second,
-		}
-	)
+		})
 	if err != nil {
 		log.Fatal("Comport open fail")
 	}
-	defer port.Close() //程式結束時關閉SerialPort
-		wbuf := []byte{0xAA, 0xAA, 0x00, 0x00, 0x00, 0xC4, 0x02, 0x02, 0x66, 0x66, 0x20, 0x01, 0x02, 0x02, 0x01, 0x22,
-		0x7B, 0x22, 0x63, 0x74, 0x73, 0x22, 0x3A, 0x31, 0x35, 0x34, 0x36, 0x33, 0x33, 0x30, 0x30, 0x38,
-		0x33, 0x2C, 0x22, 0x6D, 0x73, 0x67, 0x54, 0x79, 0x70, 0x65, 0x22, 0x3A, 0x22, 0x6E, 0x6F, 0x74,
-		0x69, 0x66, 0x79, 0x22, 0x2C, 0x22, 0x70, 0x6F, 0x73, 0x74, 0x6D, 0x61, 0x6E, 0x22, 0x3A, 0x22,
-		0x4C, 0x63, 0x6A, 0x45, 0x2D, 0x58, 0x6A, 0x74, 0x6E, 0x46, 0x70, 0x45, 0x59, 0x46, 0x38, 0x33,
-		0x4E, 0x22, 0x2C, 0x22, 0x66, 0x72, 0x6F, 0x6D, 0x22, 0x3A, 0x22, 0x6E, 0x6F, 0x6E, 0x22, 0x2C,
-		0x22, 0x74, 0x6F, 0x22, 0x3A, 0x22, 0x4C, 0x63, 0x6A, 0x45, 0x2D, 0x4D, 0x70, 0x53, 0x67, 0x5A,
-		0x43, 0x73, 0x74, 0x51, 0x67, 0x67, 0x4E, 0x22, 0x2C, 0x22, 0x6E, 0x74, 0x66, 0x54, 0x70, 0x22,
-		0x3A, 0x31, 0x2C, 0x22, 0x63, 0x6F, 0x6E, 0x74, 0x65, 0x6E, 0x74, 0x73, 0x22, 0x3A, 0x5B, 0x7B,
-		0x22, 0x6F, 0x62, 0x6A, 0x49, 0x64, 0x22, 0x3A, 0x31, 0x2C, 0x22, 0x72, 0x74, 0x22, 0x3A, 0x5B,
-		0x22, 0x6F, 0x69, 0x63, 0x2E, 0x72, 0x2E, 0x73, 0x77, 0x69, 0x74, 0x63, 0x68, 0x2E, 0x62, 0x69,
-		0x6E, 0x61, 0x72, 0x79, 0x22, 0x5D, 0x2C, 0x22, 0x76, 0x61, 0x6C, 0x75, 0x65, 0x22, 0x3A, 0x66,
-		0x61, 0x6C, 0x73, 0x65, 0x7D, 0x5D, 0x7D, 0x22, 0x3C, 0xFF}
 
-	_, err = port.Write(wbuf) //寫資料出去
+	defer port.Close() //程式結束時關閉SerialPort
+
+	//s :=`{"cts":1546330083,"msgType":"notify","postman":"r5qE-woNDWiB0zsYo","from":"non","to":"TUPO-RpdBz2teyTpY","ntfTp":1,"contents":[{"objId":1,"rt":["oic.r.switch.binary"],"value":false}]}`
+	//s:=`{"cts":1546330083,"msgType":"notify","postman":"LcjE-XjtnFpEYF83N","from":"non","to":"LcjE-MpSgZCstQggN","ntfTp":1,"contents":[{"objId":1,"rt":["oic.r.switch.binary"],"value":false}]}`
+	s:=`{"cts":1546330083,"msgType":"notify","postman":"LcjE-XjtnFpEYF83N","from":"non","to":"LcjE-MpSgZCstQggN","ntfTp":1,"contents":[{"objId":1,"rt":["oic.r.switch.binary"],"value":true}]}`
+
+	var datalen byte = returnDataLen(s)
+	var crclen byte = returnCRCLen(s)
+
+	var pTxBuf []byte
+	pTxBuf = append(pTxBuf,0xAA)
+	pTxBuf = append(pTxBuf,0xAA)
+	pTxBuf = append(pTxBuf,(datalen >> 24))
+	pTxBuf = append(pTxBuf,(datalen >> 16))
+	pTxBuf = append(pTxBuf,(datalen >> 8))
+	pTxBuf = append(pTxBuf,(datalen))
+	pTxBuf = append(pTxBuf,0x02)
+	pTxBuf = append(pTxBuf,0x02)
+	pTxBuf = append(pTxBuf,0x66)
+	pTxBuf = append(pTxBuf,0x66)
+	pTxBuf = append(pTxBuf,0x20)
+	pTxBuf = append(pTxBuf,0x01)
+	pTxBuf = append(pTxBuf,0x02)
+	pTxBuf = append(pTxBuf,0x02)
+	pTxBuf = append(pTxBuf,0x01)
+	pTxBuf = append(pTxBuf,s...)
+
+	fmt.Printf("%X\n",s)
+	println("-------------------------------------------")
+	fmt.Printf("%X\n",pTxBuf[2:crclen+2])
+	println("-------------------------------------------")
+
+	checksum := CRC16Sum(pTxBuf[2:crclen+2])
+	fmt.Printf("check sum:%X \n",checksum)
+	//
+	int16buf := new(bytes.Buffer)
+
+	//
+	binary.Write(int16buf,binary.BigEndian,checksum)
+
+	fmt.Printf("write buf is: %+X \n",int16buf.Bytes())
+	//
+	fmt.Printf("output-before:%X \n",pTxBuf)
+	pTxBuf = append(pTxBuf,int16buf.Bytes()...)
+	//
+	fmt.Printf("output-after:%X \n",pTxBuf)
+	//
+
+	_, err = port.Write(pTxBuf) //寫資料出去
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -99,7 +172,7 @@ func main() {
 	var content []byte
 
 	time.Sleep(1000 * time.Millisecond) //等待回傳所需的時間1000ms
-	for i := 0; i < 20; i++ {
+	for i := 0; i < 25; i++ {
 		log.Printf("i=%d\n", i)
 		bytesRead, err := port.Read(data) //讀資料回來
 		//content = append(content, buffer[:bytesRead]...)
@@ -112,5 +185,5 @@ func main() {
 		}
 	}
 	log.Println("content=", string(content))
-}
 
+}
