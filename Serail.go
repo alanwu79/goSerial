@@ -116,9 +116,21 @@ func main() {
 
 	defer port.Close() //程式結束時關閉SerialPort
 
+	var s string
+	var input int
+	fmt.Scanln(&input)
+	// 關1號燈
+	if input == 1 {
+		s =`{"cts":1546330083,"msgType":"notify","postman":"LcjE-XjtnFpEYF83N","from":"non","to":"LcjE-MpSgZCstQggN","ntfTp":1,"contents":[{"objId":1,"rt":["oic.r.switch.binary"],"value":false}]}`
+	}
+	// 開1號燈
+	if input == 2 {
+		s =`{"cts":1546330083,"msgType":"notify","postman":"LcjE-XjtnFpEYF83N","from":"non","to":"LcjE-MpSgZCstQggN","ntfTp":1,"contents":[{"objId":1,"rt":["oic.r.switch.binary"],"value":true}]}`
+	}
+
 	//s :=`{"cts":1546330083,"msgType":"notify","postman":"r5qE-woNDWiB0zsYo","from":"non","to":"TUPO-RpdBz2teyTpY","ntfTp":1,"contents":[{"objId":1,"rt":["oic.r.switch.binary"],"value":false}]}`
 	//s:=`{"cts":1546330083,"msgType":"notify","postman":"LcjE-XjtnFpEYF83N","from":"non","to":"LcjE-MpSgZCstQggN","ntfTp":1,"contents":[{"objId":1,"rt":["oic.r.switch.binary"],"value":false}]}`
-	s:=`{"cts":1546330083,"msgType":"notify","postman":"LcjE-XjtnFpEYF83N","from":"non","to":"LcjE-MpSgZCstQggN","ntfTp":1,"contents":[{"objId":1,"rt":["oic.r.switch.binary"],"value":true}]}`
+	//s:=`{"cts":1546330083,"msgType":"notify","postman":"LcjE-XjtnFpEYF83N","from":"non","to":"LcjE-MpSgZCstQggN","ntfTp":1,"contents":[{"objId":1,"rt":["oic.r.switch.binary"],"value":true}]}`
 
 	var datalen byte = returnDataLen(s)
 	var crclen byte = returnCRCLen(s)
@@ -151,21 +163,21 @@ func main() {
 	//
 	int16buf := new(bytes.Buffer)
 
-	//
 	binary.Write(int16buf,binary.BigEndian,checksum)
 
 	fmt.Printf("write buf is: %+X \n",int16buf.Bytes())
-	//
+
 	fmt.Printf("output-before:%X \n",pTxBuf)
+
 	pTxBuf = append(pTxBuf,int16buf.Bytes()...)
-	//
+
 	fmt.Printf("output-after:%X \n",pTxBuf)
-	//
 
 	_, err = port.Write(pTxBuf) //寫資料出去
 	if err != nil {
 		log.Fatal(err)
 	}
+
 
 	data := make([]byte, 4960)
 	pos := 0
@@ -173,11 +185,10 @@ func main() {
 
 	time.Sleep(1000 * time.Millisecond) //等待回傳所需的時間1000ms
 	for i := 0; i < 25; i++ {
-		log.Printf("i=%d\n", i)
 		bytesRead, err := port.Read(data) //讀資料回來
 		//content = append(content, buffer[:bytesRead]...)
 		if err != nil {
-			log.Println("gg")
+			log.Println("err")
 		}
 		if bytesRead > 0 {
 			pos += bytesRead
@@ -185,5 +196,4 @@ func main() {
 		}
 	}
 	log.Println("content=", string(content))
-
 }
