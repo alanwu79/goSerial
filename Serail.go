@@ -71,39 +71,12 @@ func returnCRCLen(s string) byte {
 	return CRCLen
 }
 
-//func sendMsg(port,pTxBuf []byte)  {
-//
-//	_, err = port.Write(pTxBuf) //寫資料出去
-//	if err != nil {
-//		log.Fatal(err)
-//	}
-//
-//	data := make([]byte, 4960)
-//	pos := 0
-//	var content []byte
-//
-//	time.Sleep(1000 * time.Millisecond) //等待回傳所需的時間1000ms
-//	for i := 0; i < 25; i++ {
-//		log.Printf("i=%d\n", i)
-//		bytesRead, err := port.Read(data) //讀資料回來
-//		//content = append(content, buffer[:bytesRead]...)
-//		if err != nil {
-//			log.Println("gg")
-//		}
-//		if bytesRead > 0 {
-//			pos += bytesRead
-//			content = append(content, data[:bytesRead]...)
-//		}
-//	}
-//	log.Println("content=", string(content))
-//}
-
 func main() {
 	//開啟SerialPort
 	port, err := serial.Open(
 		&serial.Config{
 			Address:  "COM6",
-			BaudRate: 9600,
+			BaudRate: 38400,
 			DataBits: 8,
 			StopBits: 1,
 			Parity:   "N",
@@ -114,18 +87,28 @@ func main() {
 		log.Fatal("Comport open fail")
 	}
 
+
+
 	defer port.Close() //程式結束時關閉SerialPort
 
 	var s string
 	var input int
+	fmt.Println(">> Light1 :state: 1(off)  2 (on) Light2 :state: 3(off)  4 (on)   ")
 	fmt.Scanln(&input)
 	// 關1號燈
+
 	if input == 1 {
-		s =`{"cts":1546330083,"msgType":"notify","postman":"LcjE-XjtnFpEYF83N","from":"non","to":"LcjE-MpSgZCstQggN","ntfTp":1,"contents":[{"objId":1,"rt":["oic.r.switch.binary"],"value":false}]}`
+		s = `{"cts":1546330083,"msgType":"notify","postman":"LcjE-XjtnFpEYF83N","from":"non","to":"LcjE-MpSgZCstQggN","ntfTp":1,"contents":[{"objId":1,"rt":["oic.r.switch.binary"],"value":false}]}`
 	}
 	// 開1號燈
 	if input == 2 {
-		s =`{"cts":1546330083,"msgType":"notify","postman":"LcjE-XjtnFpEYF83N","from":"non","to":"LcjE-MpSgZCstQggN","ntfTp":1,"contents":[{"objId":1,"rt":["oic.r.switch.binary"],"value":true}]}`
+		s = `{"cts":1546330083,"msgType":"notify","postman":"LcjE-XjtnFpEYF83N","from":"non","to":"LcjE-MpSgZCstQggN","ntfTp":1,"contents":[{"objId":1,"rt":["oic.r.switch.binary"],"value":true}]}`
+	}
+	if input == 3 {
+		s = `{"cts":1546330083,"msgType":"notify","postman":"LcjE-XjtnFpEYF83N","from":"non","to":"LcjE-WH6ZwxosbiyR","ntfTp":1,"contents":[{"objId":1,"rt":["oic.r.switch.binary"],"value":false}]}`
+	}
+	if input == 4 {
+		s = `{"cts":1546330083,"msgType":"notify","postman":"LcjE-XjtnFpEYF83N","from":"non","to":"LcjE-WH6ZwxosbiyR","ntfTp":1,"contents":[{"objId":1,"rt":["oic.r.switch.binary"],"value":true}]}`
 	}
 
 	//s :=`{"cts":1546330083,"msgType":"notify","postman":"r5qE-woNDWiB0zsYo","from":"non","to":"TUPO-RpdBz2teyTpY","ntfTp":1,"contents":[{"objId":1,"rt":["oic.r.switch.binary"],"value":false}]}`
@@ -136,48 +119,47 @@ func main() {
 	var crclen byte = returnCRCLen(s)
 
 	var pTxBuf []byte
-	pTxBuf = append(pTxBuf,0xAA)
-	pTxBuf = append(pTxBuf,0xAA)
-	pTxBuf = append(pTxBuf,(datalen >> 24))
-	pTxBuf = append(pTxBuf,(datalen >> 16))
-	pTxBuf = append(pTxBuf,(datalen >> 8))
-	pTxBuf = append(pTxBuf,(datalen))
-	pTxBuf = append(pTxBuf,0x02)
-	pTxBuf = append(pTxBuf,0x02)
-	pTxBuf = append(pTxBuf,0x66)
-	pTxBuf = append(pTxBuf,0x66)
-	pTxBuf = append(pTxBuf,0x20)
-	pTxBuf = append(pTxBuf,0x01)
-	pTxBuf = append(pTxBuf,0x02)
-	pTxBuf = append(pTxBuf,0x02)
-	pTxBuf = append(pTxBuf,0x01)
-	pTxBuf = append(pTxBuf,s...)
+	pTxBuf = append(pTxBuf, 0xAA)
+	pTxBuf = append(pTxBuf, 0xAA)
+	pTxBuf = append(pTxBuf, (datalen >> 24))
+	pTxBuf = append(pTxBuf, (datalen >> 16))
+	pTxBuf = append(pTxBuf, (datalen >> 8))
+	pTxBuf = append(pTxBuf, (datalen))
+	pTxBuf = append(pTxBuf, 0x02)
+	pTxBuf = append(pTxBuf, 0x02)
+	pTxBuf = append(pTxBuf, 0x66)
+	pTxBuf = append(pTxBuf, 0x66)
+	pTxBuf = append(pTxBuf, 0x20)
+	pTxBuf = append(pTxBuf, 0x01)
+	pTxBuf = append(pTxBuf, 0x02)
+	pTxBuf = append(pTxBuf, 0x02)
+	pTxBuf = append(pTxBuf, 0x01)
+	pTxBuf = append(pTxBuf, s...)
 
-	fmt.Printf("%X\n",s)
+	fmt.Printf("%X\n", s)
 	println("-------------------------------------------")
-	fmt.Printf("%X\n",pTxBuf[2:crclen+2])
+	fmt.Printf("%X\n", pTxBuf[2:crclen+2])
 	println("-------------------------------------------")
 
-	checksum := CRC16Sum(pTxBuf[2:crclen+2])
-	fmt.Printf("check sum:%X \n",checksum)
+	checksum := CRC16Sum(pTxBuf[2 : crclen+2])
+	fmt.Printf("check sum:%X \n", checksum)
 	//
 	int16buf := new(bytes.Buffer)
 
-	binary.Write(int16buf,binary.BigEndian,checksum)
+	binary.Write(int16buf, binary.BigEndian, checksum)
 
-	fmt.Printf("write buf is: %+X \n",int16buf.Bytes())
+	//fmt.Printf("write buf is: %+X \n",int16buf.Bytes())
 
-	fmt.Printf("output-before:%X \n",pTxBuf)
+	//fmt.Printf("output-before:%X \n",pTxBuf)
 
-	pTxBuf = append(pTxBuf,int16buf.Bytes()...)
+	pTxBuf = append(pTxBuf, int16buf.Bytes()...)
 
-	fmt.Printf("output-after:%X \n",pTxBuf)
+	//fmt.Printf("output-after:%X \n",pTxBuf)
 
 	_, err = port.Write(pTxBuf) //寫資料出去
 	if err != nil {
 		log.Fatal(err)
 	}
-
 
 	data := make([]byte, 4960)
 	pos := 0
